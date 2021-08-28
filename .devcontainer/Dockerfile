@@ -1,15 +1,30 @@
 FROM ros:noetic-robot-focal
 
 ENV IM_IN_DOCKER Yes
-ENV HOME /root
+
+ARG USERNM
+ARG UID
+ARG GID
+
+RUN groupadd -g ${GID} ${USERNM}
+# RUN useradd -ms /bin/bash ${USERNM}
+RUN useradd -m -u ${UID} -g ${GID} -s /bin/bash ${USERNM} && \
+    usermod -aG sudo ${USERNM}
+# RUN useradd ${USERNM} sudo
+# RUN adduser --disabled-password --gecos '' ${USERNM}
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+USER ${USERNM}
+
+ENV HOME /home/${USERNM}
 
 # UBUNTU LIBRARIES & PACKAGES
-RUN apt update --fix-missing && \
-    apt upgrade -y && \
-    apt install -y \
+RUN sudo apt update --fix-missing && \
+    sudo apt upgrade -y && \
+    sudo apt install -y \
     python3-pip
 
-RUN apt install -y  lsb-core \ 
+RUN sudo apt install -y  lsb-core \ 
                     # Linux Std Base support
                     # GENERAL DEV
                     libzmq3-dev \
@@ -32,7 +47,7 @@ RUN apt install -y  lsb-core \
 RUN sudo rosdep fix-permissions
 RUN rosdep update
 
-RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; mkdir -p /catkin_ws/src/; cd /catkin_ws; catkin_make"
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; mkdir -p ~/catkin_ws/src/; cd ~/catkin_ws; catkin_make"
 
 
 # LOCAL COPIES
@@ -41,8 +56,8 @@ RUN echo "source ~/start.sh" >> ~/.bashrc
 
 
 # ENDING PHASE
-RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; cd /catkin_ws; catkin_make; source devel/setup.bash" 
+RUN /bin/bash -c "source /opt/ros/noetic/setup.bash; cd ~/catkin_ws; catkin_make; source devel/setup.bash" 
 
 
-WORKDIR /home
+WORKDIR ${HOME}/
 CMD [ "/bin/bash" ]

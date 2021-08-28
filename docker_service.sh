@@ -1,2 +1,2 @@
 #!/bin/bash
-service docker start
+sudo service docker start
